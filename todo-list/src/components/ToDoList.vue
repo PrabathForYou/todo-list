@@ -1,59 +1,17 @@
-<script>
-export default {
-  data() {
-    return {
-      tasks: [],
-      newTask: '',
-      editingTask: null
-    };
-  },
-  computed: {
-    getIncompleteTaskCount() {
-      return this.tasks.filter(task => !task.completed).length;
-    }
-  },
-  methods: {
-    addTask() {
-      if (this.newTask.trim() !== '') {
-        this.tasks.push({
-          name: this.newTask,
-          completed: false
-        });
-        this.newTask = '';
-      }
-    },
-    removeTask(index) {
-      this.tasks.splice(index, 1);
-    },
-    editTask(task) {
-      this.editingTask = task;
-      this.newTask = task.name;
-    },
-    saveTask() {
-      if (this.newTask.trim() !== '') {
-        this.editingTask.name = this.newTask;
-        this.cancelEditing();
-      }
-    },
-    cancelEditing() {
-      this.editingTask = null;
-      this.newTask = '';
-    }
-  }
-};
-</script>
-
 <template>
   <div class="task-app">
-    <h1>Task Management System</h1>
+    <TaskManagementSystem/>
     <div class="task-input">
       <input
           v-model="newTask"
           type="text" placeholder="Enter a new task"
+          @keypress.enter="newTask"
       >
-      <button @click="addTask">Add Task</button>
+      <AddTaskButton/>
     </div>
     <p class="task-count">{{ getIncompleteTaskCount }} tasks remaining</p>
+    <button class="task-input-button" @click='deleteAllTasks'>Delete All tasks</button>
+<!--    <DeleteAllTasks/>-->
     <ol class="task-list">
       <li v-for="(task, index) in tasks" :key="index" class="task-item">
         <div class="task-content">
@@ -75,13 +33,75 @@ export default {
   </div>
 </template>
 
-<style>
+<script>
+import AddTaskButton from "@/components/AddTaskButton.vue";
+import TaskManagementSystem from "@/components/TaskManagementSystem.vue";
+// import DeleteAllTasks from "@/components/DeleteAllTasks.vue";
 
-h1 {
-  font-size: 24px;
-  margin-bottom: 20px;
+export default {
+  components: {
+    AddTaskButton,
+    TaskManagementSystem,
+    // DeleteAllTasks
+  },
+  data() {
+    return {
+      tasks: [],
+      newTask: '',
+      editingTask: null,
+    };
+  },
+  mounted() {
+    if (localStorage.newTask) this.newTask = localStorage.newTask;
+  },
+  created() {
+    const savedTasks = localStorage.getItem('tasks');
+    if (savedTasks) {
+      this.tasks = JSON.parse(savedTasks);
+    }
+  },
+  watch: {
+    tasks: {
+      deep: true,
+      handler() {
+        localStorage.setItem('tasks', JSON.stringify(this.tasks));
+      }
+    },
+    newTask(task) {
+      localStorage.newTask = task;
+    }
+  },
+  computed: {
+    getIncompleteTaskCount() {
+      return this.tasks.filter(task => !task.completed).length;
+    },
+  },
+  methods: {
+    removeTask(index) {
+      this.tasks.splice(index, 1);
+    },
+    editTask(task) {
+      this.editingTask = task;
+      this.newTask = task.name;
+    },
+    saveTask() {
+      if (this.newTask.trim() !== '') {
+        this.editingTask.name = this.newTask;
+        this.cancelEditing();
+      }
+    },
+    cancelEditing() {
+      this.editingTask = null;
+      this.newTask = '';
+    },
+    deleteAllTasks() {
+      this.tasks = []
+    }
+  }
 }
+</script>
 
+<style>
 .task-app {
   width: 145%;
   margin: 0 auto;
@@ -108,7 +128,7 @@ h1 {
   width: 700px;
 }
 
-.task-input button {
+.task-input-button {
   padding: 10px 15px;
   background-color: #4caf50;
   border: none;
